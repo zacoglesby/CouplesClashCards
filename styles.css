@@ -1,0 +1,395 @@
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f2f5;
+  color: #1a1a1a;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 2rem;
+  background-image: url('assets/ClashCouplesBackground.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.8rem;
+  color: #34495e;
+  margin: 1.5rem 0 1rem;
+}
+
+/* Header */
+header {
+  background-color: #2c3e50;
+  color: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Sections */
+section {
+  max-width: 100%;
+  width: 95%;
+  margin: 1rem auto;
+  padding: 1rem;
+  overflow-y: auto;
+  min-height: calc(100vh - 2rem);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Logo and Button Container Styles */
+#intro-screen,
+#setup-page header,
+#gameplay-page header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  width: 100%;
+}
+
+/* Logo Styles - Updated */
+.game-logo {
+  width: 90%;
+  max-width: 500px;
+  height: auto;
+  margin: 1rem auto;
+  display: block;
+  background: transparent;
+}
+
+/* Intro Screen Specific */
+#intro-screen {
+  min-height: 80vh;
+  padding: 2rem;
+  background: transparent;
+}
+
+#intro-screen p {
+  font-size: 1.8rem;
+  margin: 2rem 0;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* Button Containers */
+.img-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.img-button img {
+  max-width: 250px;
+  height: auto;
+  background: transparent;
+}
+
+/* Setup Page Specific */
+#setup-page #player-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#start-game-btn {
+  margin: 2rem auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* Game Play Page Specific */
+#gameplay-page header {
+  background: transparent;
+  margin-bottom: 2rem;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+  background: transparent;
+  margin-top: 2rem;
+}
+
+.action-button-img {
+  background: transparent;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+select, input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  -webkit-appearance: none; /* Better looking on iOS */
+  appearance: none;
+}
+
+select:focus, input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+/* Buttons */
+button {
+  background-color: #3498db;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+/* Game Container */
+.game-container {
+  display: grid;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* Player Turn Indicator */
+.player-turn {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px solid #e9ecef;
+}
+
+.player-turn h2 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+#current-player-name {
+  font-size: 1.5rem;
+  color: #3498db;
+  font-weight: bold;
+}
+
+/* Card Area */
+#card-area {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+#complete-btn {
+  background-color: #2ecc71;
+}
+
+#incomplete-btn {
+  background-color: #e74c3c;
+}
+
+#main-page-btn {
+  background-color: #95a5a6;
+}
+
+/* Scoreboard */
+.scoreboard-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.score-list {
+  list-style: none;
+  margin: 1rem 0;
+}
+
+.score-list li {
+  padding: 0.8rem;
+  border-bottom: 1px solid #eee;
+  font-size: 1.1rem;
+}
+
+/* Animations */
+.score-highlight {
+  animation: highlight 1s ease-in-out;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: yellow;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 600px) {
+  #game-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  section {
+    padding: 1rem;
+    margin: 0.5rem auto;
+  }
+
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .action-buttons button {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 150px;
+  }
+
+  .scoreboard-container {
+    order: -1; /* Moves scoreboard to top on mobile */
+  }
+
+  .player-turn {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(248, 249, 250, 0.95);
+  }
+
+  #card-display {
+    margin: 1rem 0;
+  }
+
+  .card {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .game-logo {
+    width: 95%;
+  }
+
+  .img-button img {
+    width: 90%;
+    max-width: 200px;
+  }
+
+  .action-button-img {
+    width: 90%;
+    max-width: 120px;
+  }
+
+  .setup-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  #player-inputs, #couple-pairings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .score-list li {
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+
+  select, input, button {
+    padding: 0.8rem;
+  }
+}
+
+/* Add meta viewport tag if not present */
+@viewport {
+  width: device-width;
+  initial-scale: 1;
+}
+
+/* Touch target sizes */
+button, select, input {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent text overflow */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}

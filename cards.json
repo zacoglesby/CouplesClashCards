@@ -1,0 +1,82 @@
+[
+  {
+    "id": "card_001",
+    "type": "Heart",
+    "text": "What is your partner's favorite dessert?",
+    "points": 1,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_002",
+    "type": "Mind",
+    "text": "Name one ambition that your partner deeply cares about.",
+    "points": 1,
+    "requiresSpinner": false,
+    "timeLimit": 30
+  },
+  {
+    "id": "card_003",
+    "type": "Soul",
+    "text": "Share a memory that touched you deeply.",
+    "points": 1,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_004",
+    "type": "Ego",
+    "text": "What trait do you secretly wish you had more of?",
+    "points": 2,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_005",
+    "type": "ActOut",
+    "text": "Mime your partner’s typical morning routine!",
+    "points": 2,
+    "requiresSpinner": true,
+    "timeLimit": 45
+  },
+  {
+    "id": "card_006",
+    "type": "Penalty",
+    "text": "Lose a turn for revealing a secret too soon.",
+    "points": -1,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_007",
+    "type": "Wildcard",
+    "text": "You may ask your partner any question you like. No time limit!",
+    "points": 3,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_008",
+    "type": "Heart",
+    "text": "What's your partner's dream vacation destination?",
+    "points": 1,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  },
+  {
+    "id": "card_009",
+    "type": "Mind",
+    "text": "What's your partner's biggest fear?",
+    "points": 2,
+    "requiresSpinner": false,
+    "timeLimit": 30
+  },
+  {
+    "id": "card_010",
+    "type": "Soul",
+    "text": "Share a moment when your partner made you proud.",
+    "points": 2,
+    "requiresSpinner": false,
+    "timeLimit": 0
+  }
+]

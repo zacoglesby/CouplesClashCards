@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Couples Clash Cards</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <!-- Intro Screen -->
+    <section id="intro-screen">
+        <img src="assets/CouplesCrashLogo.png" alt="Couples Clash Cards" class="game-logo">
+        <p>A fun party game for couples!</p>
+        <button id="start-btn" class="img-button">
+            <img src="assets/GetStarted.png" alt="Get Started">
+        </button>
+    </section>
+
+    <!-- Main Setup Page -->
+    <section id="setup-page" style="display: none;">
+        <header>
+            <img src="assets/CouplesCrashLogo.png" alt="Couples Clash Cards" class="game-logo">
+        </header>
+        
+        <div id="player-form">
+            <h2>Game Configuration</h2>
+            <div class="setup-controls">
+                <div class="form-group">
+                    <label for="player-count">Number of Players:</label>
+                    <select id="player-count">
+                        <option value="2">2</option>
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="8">8</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="couple-count">Number of Couples:</label>
+                    <select id="couple-count">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+            </div>
+
+            <h2>Enter Players</h2>
+            <div id="player-inputs"></div>
+            
+            <h2>Select Couples</h2>
+            <div id="couple-pairings"></div>
+
+            <h2>Game Settings</h2>
+            <label for="point-threshold">Points to Win:</label>
+            <select id="point-threshold">
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+            </select>
+
+            <button id="start-game-btn" class="img-button">
+                <img src="assets/StartGame.png" alt="Start Game">
+            </button>
+        </div>
+    </section>
+
+    <!-- Game Play Page -->
+    <section id="gameplay-page" style="display: none;">
+        <header>
+            <img src="assets/CouplesCrashLogo.png" alt="Couples Clash Cards" class="game-logo">
+        </header>
+
+        <div class="game-container">
+            <!-- Player Turn Indicator -->
+            <div id="player-turn" class="player-turn">
+                <h2>Player Turn:</h2>
+                <p id="current-player-name"></p>
+            </div>
+
+            <!-- Card Area -->
+            <div id="card-area">
+                <button id="draw-card-btn" class="img-button">
+                    <img src="assets/DrawCard.png" alt="Draw Card">
+                </button>
+                <div id="card-display"></div>
+                <div class="action-buttons" style="display: none;">
+                    <button id="complete-btn" class="img-button">
+                        <img src="assets/Complete.png" alt="Complete" class="action-button-img">
+                    </button>
+                    <button id="incomplete-btn" class="img-button">
+                        <img src="assets/Incomplete.png" alt="Incomplete" class="action-button-img">
+                    </button>
+                    <button id="main-page-btn" class="img-button">
+                        <img src="assets/MainPage.png" alt="Main Page" class="action-button-img">
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div id="scoreboard" class="scoreboard-container">
+                <h2>Scoreboard</h2>
+                <div class="score-wrapper">
+                    <ul id="score-list" class="score-list"></ul>
+                </div>
+                <div class="score-summary">
+                    <p>Points to Win: <span id="points-to-win"></span></p>
+                </div>
+            </div>
+
+            <!-- Game Elements -->
+            <div id="spinner-modal" style="display: none;">
+                <img src="assets/spinner.png" alt="Spinner" id="spinner-img" />
+                <p id="spinner-result"></p>
+            </div>
+
+            <div id="timer-display" style="display: none;">
+                <span id="timer-countdown"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- End Game Screen -->
+    <section id="end-game" style="display: none;">
+        <h2>Winner!</h2>
+        <p id="winner-name"></p>
+        <button id="restart-btn">Play Again</button>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,492 @@
+// Global Game State
+const gameState = {
+  players: [],     // Will hold player objects
+  couples: [],     // Array of [playerId, partnerId]
+  deck: [],        // Will load from cards.json
+  discardPile: [],
+  currentPlayerIndex: 0,
+  pointThreshold: 10,  // Default, can be 10, 15, 20, 30
+  currentCard: null
+};
+
+let timerInterval;
+
+function startTimer(seconds, onTimeUp) {
+  const timerDisplay = document.getElementById('timer-display');
+  const timerCountdown = document.getElementById('timer-countdown');
+  timerDisplay.style.display = 'block';
+
+  let timeLeft = seconds;
+  timerCountdown.textContent = timeLeft;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerCountdown.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      timerDisplay.style.display = 'none';
+      onTimeUp(); 
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timer-display').style.display = 'none';
+}
+
+async function loadDeck() {
+  try {
+    const response = await fetch('./cards.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    // Create a deep copy of the cards to avoid reference issues
+    gameState.deck = JSON.parse(JSON.stringify(data));
+    shuffleDeck(gameState.deck);
+    console.log("Deck loaded with", gameState.deck.length, "cards");
+    return true;
+  } catch (error) {
+    console.error("Error loading deck:", error);
+    return false;
+  }
+}
+
+function shuffleDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+}
+
+window.onload = async function() {
+  await loadDeck();
+  setupEventListeners();
+};
+
+function setupEventListeners() {
+  const startBtn = document.getElementById('start-btn');
+  const startGameBtn = document.getElementById('start-game-btn');
+  const drawCardBtn = document.getElementById('draw-card-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const playerCountSelect = document.getElementById('player-count');
+  const coupleCountSelect = document.getElementById('couple-count');
+  const completeBtn = document.getElementById('complete-btn');
+  const incompleteBtn = document.getElementById('incomplete-btn');
+  const mainPageBtn = document.getElementById('main-page-btn');
+
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      document.getElementById('intro-screen').style.display = 'none';
+      document.getElementById('setup-page').style.display = 'block';
+    });
+  }
+
+  if (startGameBtn) {
+    startGameBtn.addEventListener('click', async () => {
+      // Ensure deck is loaded before starting game
+      if (gameState.deck.length === 0) {
+        await loadDeck();
+      }
+      if (gameState.deck.length === 0) {
+        alert('Error loading cards. Please try again.');
+        return;
+      }
+      setupPlayers();
+      document.getElementById('setup-page').style.display = 'none';
+      document.getElementById('gameplay-page').style.display = 'block';
+      renderScoreboard();
+    });
+  }
+
+  if (drawCardBtn) {
+    drawCardBtn.addEventListener('click', drawCard);
+  }
+
+  if (restartBtn) {
+    restartBtn.addEventListener('click', restartGame);
+  }
+
+  if (playerCountSelect) {
+    playerCountSelect.addEventListener('change', generatePlayerInputs);
+  }
+
+  if (coupleCountSelect) {
+    coupleCountSelect.addEventListener('change', generateCouplePairings);
+  }
+
+  if (completeBtn) {
+    completeBtn.addEventListener('click', () => handleCardCompletion(true));
+  }
+  if (incompleteBtn) {
+    incompleteBtn.addEventListener('click', () => handleCardCompletion(false));
+  }
+  if (mainPageBtn) {
+    mainPageBtn.addEventListener('click', confirmMainPageReturn);
+  }
+}
+
+function handleCardCompletion(isComplete) {
+  const currentCard = gameState.currentCard;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  
+  if (isComplete) {
+    updateScore(currentPlayer.id, currentCard.points);
+  } else {
+    updateScore(currentPlayer.id, -Math.abs(currentCard.points));
+  }
+  
+  document.querySelector('.action-buttons').style.display = 'none';
+  nextPlayer();
+}
+
+function confirmMainPageReturn() {
+  if (confirm('Are you sure you want to return to the main page? Current game progress will be lost.')) {
+    document.getElementById('gameplay-page').style.display = 'none';
+    document.getElementById('setup-page').style.display = 'block';
+  }
+}
+
+function generatePlayerInputs() {
+  const count = parseInt(document.getElementById('player-count').value);
+  const container = document.getElementById('player-inputs');
+  container.innerHTML = '';
+  
+  for (let i = 1; i <= count; i++) {
+    container.innerHTML += `
+      <div class="player-input">
+        <input type="text" id="player${i}-name" placeholder="Player ${i} Name">
+      </div>
+    `;
+  }
+  
+  // Add input listeners to new player name fields
+  document.querySelectorAll('[id^="player"][id$="-name"]').forEach(input => {
+    input.addEventListener('input', updatePlayerSelections);
+  });
+}
+
+function generateCouplePairings() {
+  const count = parseInt(document.getElementById('couple-count').value);
+  const container = document.getElementById('couple-pairings');
+  container.innerHTML = '';
+  
+  for (let i = 1; i <= count; i++) {
+    container.innerHTML += `
+      <div class="couple-pairing">
+        <label>Couple ${i}:</label>
+        <select id="couple${i}-a" class="player-select"></select>
+        <select id="couple${i}-b" class="player-select"></select>
+      </div>
+    `;
+  }
+  updatePlayerSelections();
+}
+
+function updatePlayerSelections() {
+  const players = Array.from(document.querySelectorAll('[id^="player"][id$="-name"]'))
+    .map(input => ({
+      id: input.id.replace('-name', ''),
+      name: input.value || input.placeholder
+    }));
+  
+  const selects = document.querySelectorAll('.player-select');
+  selects.forEach(select => {
+    const currentValue = select.value; // Store current selection
+    select.innerHTML = `
+      <option value="">Select Player</option>
+      ${players.map(p => `
+        <option value="${p.id}" ${currentValue === p.id ? 'selected' : ''}>
+          ${p.name}
+        </option>
+      `).join('')}
+    `;
+  });
+}
+
+function restartGame() {
+  // Reset game state
+  gameState.currentPlayerIndex = 0;
+  gameState.players.forEach(player => player.score = 0);
+  
+  // Reset deck by moving all cards back and reshuffling
+  gameState.deck = [...gameState.deck, ...gameState.discardPile];
+  gameState.discardPile = [];
+  shuffleDeck(gameState.deck);
+  
+  // Reset UI
+  document.getElementById('end-game').style.display = 'none';
+  document.getElementById('setup-page').style.display = 'block';
+  document.getElementById('game-board').style.display = 'none';
+  document.querySelector('.action-buttons').style.display = 'none';
+  
+  renderScoreboard();
+}
+
+function setupPlayers() {
+  const playerInputs = document.querySelectorAll('[id^="player"][id$="-name"]');
+  if (!playerInputs.length) {
+    alert('Please enter player names first!');
+    return;
+  }
+
+  const players = [];
+  
+  playerInputs.forEach((input, index) => {
+    players.push({
+      id: `player_${index + 1}`,
+      name: input.value || `Player ${index + 1}`,
+      partnerId: '',
+      score: 0
+    });
+  });
+  
+  gameState.players = players;
+  
+  // Set up couples based on selections
+  gameState.couples = [];
+  const coupleCount = parseInt(document.getElementById('couple-count').value);
+  for (let i = 1; i <= coupleCount; i++) {
+    const player1Id = document.getElementById(`couple${i}-a`).value;
+    const player2Id = document.getElementById(`couple${i}-b`).value;
+    if (player1Id && player2Id) {
+      gameState.couples.push([player1Id, player2Id]);
+      // Set partner IDs
+      const player1 = players.find(p => p.id === player1Id);
+      const player2 = players.find(p => p.id === player2Id);
+      if (player1 && player2) {
+        player1.partnerId = player2Id;
+        player2.partnerId = player1Id;
+      }
+    }
+  }
+
+  const thresholdSelect = document.getElementById('point-threshold');
+  gameState.pointThreshold = parseInt(thresholdSelect.value);
+
+  renderScoreboard(); // Initialize scoreboard after player setup
+  updateCurrentPlayerDisplay(); // Add this line
+}
+
+function nextPlayer() {
+  gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+  highlightCurrentPlayer();
+  updateCurrentPlayerDisplay(); // Add this line
+}
+
+// Add this new function
+function updateCurrentPlayerDisplay() {
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const playerNameElement = document.getElementById('current-player-name');
+  if (playerNameElement && currentPlayer) {
+    playerNameElement.textContent = currentPlayer.name;
+  }
+}
+
+function renderScoreboard() {
+  const scoreList = document.getElementById('score-list');
+  scoreList.innerHTML = ''; // Clear existing items
+
+  gameState.players.forEach(player => {
+    const li = document.createElement('li');
+    li.textContent = `${player.name}: ${player.score} pts`;
+    scoreList.appendChild(li);
+  });
+
+  // Update points to win display
+  const pointsToWin = document.getElementById('points-to-win');
+  if (pointsToWin) {
+    pointsToWin.textContent = gameState.pointThreshold;
+  }
+}
+
+function updateScore(playerId, points) {
+  const player = gameState.players.find(p => p.id === playerId);
+  if (player) {
+    player.score += points;
+    renderScoreboard();
+    highlightScore(playerId);
+    playSound('assets/score-up.mp3');
+    
+    // Check for winner
+    if (player.score >= gameState.pointThreshold) {
+      endGame(player);
+    }
+  }
+}
+
+function resolveCard(card, currentPlayer) {
+  switch (card.type) {
+    case "Heart":
+      handleHeartCard(card, currentPlayer);
+      break;
+    case "Mind":
+      handleMindCard(card, currentPlayer);
+      break;
+    case "Soul":
+      handleSoulCard(card, currentPlayer);
+      break;
+    case "Ego":
+      handleEgoCard(card, currentPlayer);
+      break;
+    case "ActOut":
+      handleActOutCard(card, currentPlayer);
+      break;
+    case "Penalty":
+      handlePenaltyCard(card, currentPlayer);
+      break;
+    case "Wildcard":
+      handleWildcardCard(card, currentPlayer);
+      break;
+    default:
+      console.warn("Unknown card type:", card.type);
+      break;
+  }
+}
+
+function handleHeartCard(card, currentPlayer) {
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} gains ${card.points} points from a Heart card!`);
+}
+
+function handleMindCard(card, currentPlayer) {
+  if (card.timeLimit && card.timeLimit > 0) {
+    startTimer(card.timeLimit, () => {
+      alert("Time's up!");
+      // Optional penalty logic can be added here
+    });
+  }
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} gains ${card.points} points from a Mind card!`);
+}
+
+function handleSoulCard(card, currentPlayer) {
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} gains ${card.points} points from a Soul card!`);
+}
+
+function handleEgoCard(card, currentPlayer) {
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} gains ${card.points} points from an Ego card!`);
+}
+
+function spinForParticipant(excludeId) {
+  const possiblePlayers = gameState.players.filter(p => p.id !== excludeId);
+  const randomIndex = Math.floor(Math.random() * possiblePlayers.length);
+  return possiblePlayers[randomIndex];
+}
+
+function showSpinner(excludeId) {
+  const spinnerModal = document.getElementById('spinner-modal');
+  const spinnerResult = document.getElementById('spinner-result');
+
+  spinnerResult.textContent = 'Spinning...';
+  spinnerModal.style.display = 'block';
+
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const chosen = spinForParticipant(excludeId);
+      spinnerResult.textContent = `Chosen: ${chosen.name}`;
+      setTimeout(() => {
+        spinnerModal.style.display = 'none';
+        resolve(chosen);
+      }, 2000);
+    }, 2000);
+  });
+}
+
+function handleActOutCard(card, currentPlayer) {
+  if (card.requiresSpinner) {
+    showSpinner(currentPlayer.id).then(() => {
+      updateScore(currentPlayer.id, card.points);
+    });
+  } else {
+    updateScore(currentPlayer.id, card.points);
+  }
+  alert(`${currentPlayer.name} must perform an action!`);
+}
+
+function handlePenaltyCard(card, currentPlayer) {
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} receives a penalty of ${card.points} points.`);
+}
+
+function handleWildcardCard(card, currentPlayer) {
+  updateScore(currentPlayer.id, card.points);
+  alert(`${currentPlayer.name} draws a Wildcard!`);
+  // TODO: Implement special wildcard logic
+}
+
+function highlightCurrentPlayer() {
+  const current = gameState.players[gameState.currentPlayerIndex];
+  console.log("Current Turn:", current.name);
+  
+  // Update UI to show current player
+  const scoreItems = document.querySelectorAll('#score-list li');
+  scoreItems.forEach((item, index) => {
+    item.classList.toggle('active-player', index === gameState.currentPlayerIndex);
+  });
+}
+
+function drawCard() {
+  // Check if deck needs to be reshuffled
+  if (gameState.deck.length === 0) {
+    if (gameState.discardPile.length === 0) {
+      alert("No more cards in the deck!");
+      return;
+    }
+    // Reshuffle discard pile back into deck
+    gameState.deck = [...gameState.discardPile];
+    gameState.discardPile = [];
+    shuffleDeck(gameState.deck);
+    console.log("Reshuffled discard pile into deck:", gameState.deck.length, "cards");
+  }
+
+  const card = gameState.deck.pop();
+  gameState.currentCard = card;
+  gameState.discardPile.push(card);
+  displayCard(card);
+  document.querySelector('.action-buttons').style.display = 'flex';
+  console.log("Cards remaining:", gameState.deck.length);
+}
+
+// Update displayCard to not automatically resolve the card
+function displayCard(card) {
+  const cardDisplay = document.getElementById('card-display');
+  cardDisplay.innerHTML = `
+    <div class="card">
+      <h3>${card.type} Card</h3>
+      <p>${card.text}</p>
+    </div>
+  `;
+  
+  const cardElement = cardDisplay.querySelector('.card');
+  cardElement.classList.add('flip');
+}
+
+function flipCard(cardElement) {
+  cardElement.classList.toggle('flip');
+}
+
+function highlightScore(playerId) {
+  const scoreElement = document.getElementById(playerId);
+  if (!scoreElement) return;
+  
+  scoreElement.classList.add('score-highlight');
+  setTimeout(() => {
+    scoreElement.classList.remove('score-highlight');
+  }, 1000);
+}
+
+function playSound(soundPath) {
+  const audio = new Audio(soundPath);
+  audio.play().catch(err => console.log('Sound playback error:', err));
+}
+
+function endGame(winner) {
+  stopTimer(); // Stop any running timer
+  document.getElementById('game-board').style.display = 'none';
+  document.getElementById('end-game').style.display = 'block';
+  document.getElementById('winner-name').textContent = winner.name;
+}
