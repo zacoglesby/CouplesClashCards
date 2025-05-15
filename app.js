@@ -146,6 +146,13 @@ function handleCardCompletion(isComplete) {
   const currentCard = gameState.currentCard;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   
+  if (!currentCard || !currentPlayer) {
+    console.error("Cannot complete card: missing card or player data");
+    return;
+  }
+
+  console.log(`Card completion: ${isComplete ? 'Complete' : 'Incomplete'} for ${currentPlayer.name}`);
+  
   if (isComplete) {
     updateScore(currentPlayer.id, currentCard.points);
   } else {
@@ -154,6 +161,25 @@ function handleCardCompletion(isComplete) {
   
   document.querySelector('.action-buttons').style.display = 'none';
   nextPlayer();
+}
+
+// Add the missing updateScore function
+function updateScore(playerId, points) {
+  const player = gameState.players.find(p => p.id === playerId);
+  if (player) {
+    console.log(`Updating score for ${player.name}: ${player.score} → ${player.score + points}`);
+    player.score += points;
+    renderScoreboard();
+    highlightScore(playerId);
+    playSound('assets/score-up.mp3');
+    
+    // Check for winner
+    if (player.score >= gameState.pointThreshold) {
+      endGame(player);
+    }
+  } else {
+    console.error(`Player with ID ${playerId} not found`);
+  }
 }
 
 function confirmMainPageReturn() {
@@ -306,31 +332,108 @@ function renderScoreboard() {
 
   // Find the player with the highest score
   const leadingPlayer = findLeadingPlayer();
+  
+  // Find the couple with highest combined score
+  const leadingCouple = findLeadingCouple();
 
-  gameState.players.forEach(player => {
-    const li = document.createElement('li');
-    
-    // Create name span
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = player.name;
-    
-    // Create score span
-    const scoreSpan = document.createElement('span');
-    scoreSpan.textContent = `${player.score} pts`;
-    
-    // Add elements to list item
-    li.appendChild(nameSpan);
-    li.appendChild(scoreSpan);
-    
-    li.id = player.id; // Set id for highlightScore to work
-    
-    // Highlight the leading player
-    if (leadingPlayer && player.id === leadingPlayer.id) {
-      li.classList.add('leader');
-    }
-    
-    scoreList.appendChild(li);
-  });
+  // Group players by couples
+  if (gameState.couples.length > 0) {
+    // Display couples format
+    gameState.couples.forEach((coupleIds, index) => {
+      const player1 = gameState.players.find(p => p.id === coupleIds[0]);
+      const player2 = gameState.players.find(p => p.id === coupleIds[1]);
+      
+      if (player1 && player2) {
+        const coupleTotal = player1.score + player2.score;
+        const coupleIndex = index + 1;
+        
+        // Create couple container
+        const coupleContainer = document.createElement('div');
+        coupleContainer.className = 'couple-container';
+        
+        // Create couple header
+        const coupleHeader = document.createElement('div');
+        coupleHeader.className = 'couple-header';
+        coupleHeader.innerHTML = `<span>Couple ${coupleIndex}:</span>`;
+        
+        // Highlight leading couple
+        if (leadingCouple && coupleIds[0] === leadingCouple[0][0] && coupleIds[1] === leadingCouple[0][1]) {
+          coupleHeader.classList.add('leader-couple');
+        }
+        
+        coupleContainer.appendChild(coupleHeader);
+        
+        // Create player entries
+        [player1, player2].forEach(player => {
+          const playerItem = document.createElement('li');
+          playerItem.id = player.id;
+          
+          // Create name span
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = player.name;
+          
+          // Create score span
+          const scoreSpan = document.createElement('span');
+          scoreSpan.textContent = `${player.score} pts`;
+          
+          // Add elements to list item
+          playerItem.appendChild(nameSpan);
+          playerItem.appendChild(scoreSpan);
+          
+          // Highlight the leading player
+          if (leadingPlayer && player.id === leadingPlayer.id) {
+            playerItem.classList.add('leader');
+          }
+          
+          // Highlight current player
+          if (gameState.players[gameState.currentPlayerIndex].id === player.id) {
+            playerItem.classList.add('active-player');
+          }
+          
+          coupleContainer.appendChild(playerItem);
+        });
+        
+        // Add couple total
+        const coupleTotal_el = document.createElement('div');
+        coupleTotal_el.className = 'couple-total';
+        coupleTotal_el.innerHTML = `<span>Couple ${coupleIndex}: ${coupleTotal} pts total</span>`;
+        coupleContainer.appendChild(coupleTotal_el);
+        
+        scoreList.appendChild(coupleContainer);
+      }
+    });
+  } else {
+    // Original individual player display for games without couples
+    gameState.players.forEach(player => {
+      const li = document.createElement('li');
+      
+      // Create name span
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = player.name;
+      
+      // Create score span
+      const scoreSpan = document.createElement('span');
+      scoreSpan.textContent = `${player.score} pts`;
+      
+      // Add elements to list item
+      li.appendChild(nameSpan);
+      li.appendChild(scoreSpan);
+      
+      li.id = player.id; // Set id for highlightScore to work
+      
+      // Highlight the leading player
+      if (leadingPlayer && player.id === leadingPlayer.id) {
+        li.classList.add('leader');
+      }
+      
+      // Highlight current player
+      if (gameState.players[gameState.currentPlayerIndex].id === player.id) {
+        li.classList.add('active-player');
+      }
+      
+      scoreList.appendChild(li);
+    });
+  }
 
   // Update points to win display
   const pointsToWin = document.getElementById('points-to-win');
@@ -346,18 +449,66 @@ function renderScoreboard() {
 function findLeadingPlayer() {
   if (gameState.players.length === 0) return null;
   
-  return gameState.players.reduce((leader, player) => {
-    return (player.score > leader.score) ? player : leader;
-  }, gameState.players[0]);
+  let highestScore = Number.NEGATIVE_INFINITY;
+  let leadingPlayer = null;
+  
+  for (const player of gameState.players) {
+    if (player.score > highestScore) {
+      highestScore = player.score;
+      leadingPlayer = player;
+    }
+  }
+  
+  return highestScore > 0 ? leadingPlayer : null;
 }
 
-// Update the leader status text
+// Find the couple with the highest combined score
+function findLeadingCouple() {
+  if (gameState.couples.length === 0) return null;
+  
+  let highestScore = Number.NEGATIVE_INFINITY;
+  let leadingCouple = null;
+  
+  for (const couple of gameState.couples) {
+    const player1 = gameState.players.find(p => p.id === couple[0]);
+    const player2 = gameState.players.find(p => p.id === couple[1]);
+    
+    if (player1 && player2) {
+      const combinedScore = player1.score + player2.score;
+      if (combinedScore > highestScore) {
+        highestScore = combinedScore;
+        leadingCouple = couple;
+      }
+    }
+  }
+  
+  return highestScore > 0 ? [leadingCouple, highestScore] : null;
+}
+
+// Update the leader status text to include couple information
 function updateLeaderStatus() {
   const leaderStatus = document.getElementById('leader-status');
   if (!leaderStatus) return;
   
   const leadingPlayer = findLeadingPlayer();
+  const leadingCouple = findLeadingCouple();
   
+  if (leadingCouple && leadingCouple[1] > 0) {
+    // Find the couple number
+    const coupleIndex = gameState.couples.findIndex(
+      couple => couple[0] === leadingCouple[0][0] && couple[1] === leadingCouple[0][1]
+    );
+    
+    if (coupleIndex !== -1) {
+      const player1 = gameState.players.find(p => p.id === leadingCouple[0][0]);
+      const player2 = gameState.players.find(p => p.id === leadingCouple[0][1]);
+      
+      leaderStatus.innerHTML = `<span class="leader-highlight">Couple ${coupleIndex + 1} (${player1.name} & ${player2.name})</span> is in the lead with ${leadingCouple[1]} points!`;
+      return;
+    }
+  }
+  
+  // Fall back to individual leader if no couples or error finding couple info
   if (leadingPlayer && leadingPlayer.score > 0) {
     leaderStatus.innerHTML = `<span class="leader-highlight">${leadingPlayer.name}</span> is in the lead!`;
   } else if (gameState.players.length > 0) {
@@ -367,105 +518,43 @@ function updateLeaderStatus() {
   }
 }
 
-// Enhance the existing spinner functionality
-function showSpinner(excludeId) {
-  // Update the visible spinner instead of modal
-  const spinnerImg = document.getElementById('spinner-img');
-  const spinnerResult = document.getElementById('spinner-result');
-  
-  if (spinnerResult) {
-    spinnerResult.textContent = 'Spinning...';
+// Modify highlightScore to work with the new scoreboard structure
+function highlightScore(playerId) {
+  const scoreElement = document.getElementById(playerId);
+  if (!scoreElement) {
+    console.warn(`Score element for player ID ${playerId} not found`);
+    return;
   }
   
-  // Add spinning animation
-  if (spinnerImg) {
-    spinnerImg.style.transform = `rotate(${Math.floor(Math.random() * 1080) + 360}deg)`;
-  }
-
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const chosen = spinForParticipant(excludeId);
-      
-      if (spinnerResult) {
-        spinnerResult.textContent = `Chosen: ${chosen.name}`;
-      }
-      
-      setTimeout(() => {
-        resolve(chosen);
-      }, 1000);
-    }, 2000);
-  });
-}
-
-// Make sure to update score and check for winner
-function updateScore(playerId, points) {
-  const player = gameState.players.find(p => p.id === playerId);
-  if (player) {
-    player.score += points;
-    renderScoreboard();
-    highlightScore(playerId);
-    playSound('assets/score-up.mp3');
+  scoreElement.classList.add('score-highlight');
+  
+  // If we have couples, also highlight the couple total
+  if (gameState.couples.length > 0) {
+    // Find which couple this player belongs to
+    const couple = gameState.couples.find(couple => 
+      couple[0] === playerId || couple[1] === playerId
+    );
     
-    // Check for winner
-    if (player.score >= gameState.pointThreshold) {
-      endGame(player);
+    if (couple) {
+      // Find the couple container that holds this player
+      const parentContainer = scoreElement.closest('.couple-container');
+      if (parentContainer) {
+        const coupleTotal = parentContainer.querySelector('.couple-total');
+        if (coupleTotal) {
+          coupleTotal.classList.add('score-highlight');
+          
+          // Remove the highlight after animation completes
+          setTimeout(() => {
+            coupleTotal.classList.remove('score-highlight');
+          }, 1000);
+        }
+      }
     }
   }
-}
-
-function resolveCard(card, currentPlayer) {
-  switch (card.type) {
-    case "Heart":
-      handleHeartCard(card, currentPlayer);
-      break;
-    case "Mind":
-      handleMindCard(card, currentPlayer);
-      break;
-    case "Soul":
-      handleSoulCard(card, currentPlayer);
-      break;
-    case "Ego":
-      handleEgoCard(card, currentPlayer);
-      break;
-    case "ActOut":
-      handleActOutCard(card, currentPlayer);
-      break;
-    case "Penalty":
-      handlePenaltyCard(card, currentPlayer);
-      break;
-    case "Wildcard":
-      handleWildcardCard(card, currentPlayer);
-      break;
-    default:
-      console.warn("Unknown card type:", card.type);
-      break;
-  }
-}
-
-function handleHeartCard(card, currentPlayer) {
-  updateScore(currentPlayer.id, card.points);
-  alert(`${currentPlayer.name} gains ${card.points} points from a Heart card!`);
-}
-
-function handleMindCard(card, currentPlayer) {
-  if (card.timeLimit && card.timeLimit > 0) {
-    startTimer(card.timeLimit, () => {
-      alert("Time's up!");
-      // Optional penalty logic can be added here
-    });
-  }
-  updateScore(currentPlayer.id, card.points);
-  alert(`${currentPlayer.name} gains ${card.points} points from a Mind card!`);
-}
-
-function handleSoulCard(card, currentPlayer) {
-  updateScore(currentPlayer.id, card.points);
-  alert(`${currentPlayer.name} gains ${card.points} points from a Soul card!`);
-}
-
-function handleEgoCard(card, currentPlayer) {
-  updateScore(currentPlayer.id, card.points);
-  alert(`${currentPlayer.name} gains ${card.points} points from an Ego card!`);
+  
+  setTimeout(() => {
+    scoreElement.classList.remove('score-highlight');
+  }, 1000);
 }
 
 function spinForParticipant(excludeId) {
@@ -474,7 +563,7 @@ function spinForParticipant(excludeId) {
   return possiblePlayers[randomIndex];
 }
 
-function showSpinner(excludeId) {
+function showSpinnerModal(excludeId) {
   const spinnerModal = document.getElementById('spinner-modal');
   const spinnerResult = document.getElementById('spinner-result');
 
@@ -495,7 +584,7 @@ function showSpinner(excludeId) {
 
 function handleActOutCard(card, currentPlayer) {
   if (card.requiresSpinner) {
-    showSpinner(currentPlayer.id).then(() => {
+    showSpinnerModal(currentPlayer.id).then(() => {
       updateScore(currentPlayer.id, card.points);
     });
   } else {
@@ -637,16 +726,6 @@ function toggleStackFlip() {
     }
 }
 
-function highlightScore(playerId) {
-  const scoreElement = document.getElementById(playerId);
-  if (!scoreElement) return;
-  
-  scoreElement.classList.add('score-highlight');
-  setTimeout(() => {
-    scoreElement.classList.remove('score-highlight');
-  }, 1000);
-}
-
 function playSound(soundPath) {
   const audio = new Audio(soundPath);
   audio.play().catch(err => console.log('Sound playback error:', err));
@@ -654,7 +733,7 @@ function playSound(soundPath) {
 
 function endGame(winner) {
   stopTimer(); // Stop any running timer
-  document.getElementById('game-board').style.display = 'none';
+  document.getElementById('gameplay-page').style.display = 'none'; // Updated to target the correct element
   document.getElementById('end-game').style.display = 'block';
   document.getElementById('winner-name').textContent = winner.name;
 }
@@ -826,4 +905,398 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         });
     }
+});
+
+// Spin Wheel Implementation
+let wheel;
+let spinAudio = new Audio("assets/score-up.mp3"); // Reusing your existing sound
+const spinDuration = 5000; // milliseconds
+let selectedWheelPlayers = []; // Store players that are selected for the wheel
+
+// Initialize the wheel with selected players - fixed to properly display player names
+function initWheel() {
+  // Check if wheel already exists and destroy it
+  if (wheel) {
+    wheel.destroy();
+  }
+  
+  // Get the current player
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  
+  // Get players selected for the wheel (excluding current player)
+  selectedWheelPlayers = getSelectedWheelPlayers().filter(p => p.id !== currentPlayer.id);
+  
+  console.log("Players for wheel:", selectedWheelPlayers.length);
+  console.log("Player names:", selectedWheelPlayers.map(p => p.name));
+  
+  // If no players selected, show message
+  if (selectedWheelPlayers.length === 0) {
+    document.getElementById("final-value").innerHTML = "<p>Please select players for the wheel!</p>";
+    return;
+  }
+  
+  // Get canvas element
+  const canvas = document.getElementById("wheel");
+  if (!canvas) {
+    console.error("Canvas element not found");
+    return;
+  }
+  
+  // Segment colors - add more colors if needed
+  const colors = [
+    "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", 
+    "#FF9F40", "#8AC249", "#EA5F94", "#00D8B6", "#FFB7B2"
+  ];
+  
+  // Calculate segment angles
+  const segmentSize = 360 / selectedWheelPlayers.length;
+  const rotationValues = [];
+  
+  // Set up rotation values for each player
+  selectedWheelPlayers.forEach((player, index) => {
+    rotationValues.push({
+      minDegree: index * segmentSize,
+      maxDegree: (index + 1) * segmentSize - 1, // -1 to avoid overlap
+      value: index, // Index of the player in selectedWheelPlayers array
+      player: player // Store the player object for reference
+    });
+  });
+  
+  // Get player names for wheel segments
+  const playerNames = selectedWheelPlayers.map(player => player.name);
+  console.log("Player names for wheel:", playerNames);
+  
+  // Chart configuration
+  const chartConfig = {
+    type: "pie",
+    data: {
+      labels: playerNames, // Use player names explicitly
+      datasets: [{
+        backgroundColor: colors.slice(0, selectedWheelPlayers.length),
+        data: Array(selectedWheelPlayers.length).fill(1), // All segments same size
+        borderWidth: 1,
+        borderColor: "#ffffff",
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 0 },
+      plugins: {
+        tooltip: false,
+        legend: {
+          display: false,
+        },
+        datalabels: {
+          color: "#ffffff",
+          formatter: (_, context) => context.chart.data.labels[context.dataIndex],
+          font: { 
+            size: 16, // Increased font size for better visibility
+            weight: 'bold' 
+          },
+          // Adjust label angle for better readability
+          rotation: (context) => {
+            const segmentMiddle = context.dataIndex * segmentSize + segmentSize / 2;
+            return segmentMiddle > 90 && segmentMiddle < 270 ? 180 : 0;
+          },
+          textAlign: 'center',
+          display: true // Ensure labels are displayed
+        }
+      }
+    }
+  };
+  
+  console.log("Creating wheel with config:", chartConfig);
+  
+  try {
+    // Create the wheel chart with the ChartJS library
+    wheel = new Chart(canvas, chartConfig);
+    
+    // Force an update to ensure labels are rendered
+    wheel.update();
+    
+    // Log the data to verify
+    console.log("Wheel created with segments:", wheel.data.labels.length);
+    console.log("Segment labels:", wheel.data.labels);
+    
+    // Update final-value
+    document.getElementById("final-value").innerHTML = "<p>Click On The Spin Button To Start</p>";
+    
+    // Add spin button event listener
+    const spinBtn = document.getElementById("spin-btn");
+    if (spinBtn) {
+      // Remove existing event listeners to prevent duplicates
+      const newSpinBtn = spinBtn.cloneNode(true);
+      spinBtn.parentNode.replaceChild(newSpinBtn, spinBtn);
+      
+      // Add event listener to the new button
+      newSpinBtn.addEventListener("click", function() {
+        spinWheel(rotationValues, selectedWheelPlayers);
+      });
+    }
+  } catch (error) {
+    console.error("Error creating wheel:", error);
+  }
+}
+
+// Get players that are selected for the wheel based on checkboxes
+function getSelectedWheelPlayers() {
+  const checkboxes = document.querySelectorAll('.wheel-player-item input[type="checkbox"]:checked');
+  console.log("Found checked checkboxes:", checkboxes.length);
+  
+  // Map checkboxes to player objects, ensuring we get valid player references
+  const checkedPlayers = Array.from(checkboxes).map(checkbox => {
+    const playerId = checkbox.getAttribute('data-player-id');
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player) {
+      console.warn(`Player with ID ${playerId} not found`);
+    }
+    return player;
+  }).filter(player => player !== undefined);
+  
+  console.log("Valid selected players:", checkedPlayers.length);
+  
+  return checkedPlayers;
+}
+
+// Add function to handle spun player selection
+function spinnedPlayerSelected(player) {
+  if (!player) return;
+  
+  // Handle the selected player from the wheel spin
+  console.log(`Wheel selected player: ${player.name}`);
+  
+  // Close wheel modal if open
+  const wheelModal = document.getElementById('wheel-modal');
+  if (wheelModal) {
+    wheelModal.style.display = 'none';
+  }
+  
+  // Update UI to show selected player
+  document.getElementById('spinner-result').textContent = `Selected: ${player.name}`;
+  
+  // Handle any game logic related to the selected player
+  if (gameState.currentCard) {
+    // You can add specific actions based on the card type
+    alert(`${player.name} has been selected for ${gameState.players[gameState.currentPlayerIndex].name}'s card!`);
+  }
+}
+
+// Spin the wheel and select a player
+function spinWheel(rotationValues, selectedPlayers) {
+  // Ensure we have players to spin for
+  if (selectedPlayers.length === 0) {
+    document.getElementById("final-value").innerHTML = "<p>Please select players for the wheel!</p>";
+    return;
+  }
+
+  const spinBtn = document.getElementById("spin-btn");
+  const finalValue = document.getElementById("final-value");
+  
+  // Disable button during spin
+  spinBtn.disabled = true;
+  spinBtn.style.opacity = "0.7";
+  
+  // Reset final value
+  finalValue.innerHTML = "<p>Spinning...</p>";
+  
+  // Generate random stop angle (between 0 and 360)
+  const stopAngle = Math.floor(Math.random() * 360);
+  
+  // Calculate rotation
+  let rotationInterval = window.setInterval(() => {
+    wheel.options.rotation = wheel.options.rotation ? wheel.options.rotation + 10 : 10;
+    wheel.update();
+  }, 10);
+  
+  // Play spin sound
+  spinAudio.play().catch(err => console.log("Audio play error:", err));
+  
+  // Stop the wheel after the spin duration
+  setTimeout(() => {
+    // Clear rotation interval
+    clearInterval(rotationInterval);
+    
+    // Set the final rotation to the stop angle
+    wheel.options.rotation = stopAngle;
+    wheel.update();
+    
+    // Determine the selected player
+    const selectedValue = findValueFromStopAngle(stopAngle, rotationValues);
+    const selectedPlayer = selectedPlayers[selectedValue];
+    
+    // Display the result
+    finalValue.innerHTML = `<p>Selected: <strong>${selectedPlayer.name}</strong></p>`;
+    
+    // Re-enable the button
+    spinBtn.disabled = false;
+    spinBtn.style.opacity = "1";
+    
+    // If this is for a card that requires spinning
+    if (gameState.currentCard && gameState.currentCard.requiresSpinner) {
+      spinnedPlayerSelected(selectedPlayer);
+    }
+  }, spinDuration);
+}
+
+// Find the value from the stop angle
+function findValueFromStopAngle(stopAngle, rotationValues) {
+  // Normalize the angle to be between 0-360
+  const normalizedAngle = stopAngle % 360;
+  
+  // Find which segment the angle is in
+  for (let i of rotationValues) {
+    if (normalizedAngle >= i.minDegree && normalizedAngle <= i.maxDegree) {
+      return i.value;
+    }
+  }
+  
+  // Fallback to first value
+  return 0;
+}
+
+// Improved function to generate player checkboxes for the wheel
+function generateWheelPlayerCheckboxes() {
+  const wheelPlayerList = document.getElementById('wheel-player-list');
+  if (!wheelPlayerList) {
+    console.error("Wheel player list element not found");
+    return;
+  }
+  
+  wheelPlayerList.innerHTML = ''; // Clear existing checkboxes
+  
+  // Skip if no players
+  if (!gameState.players || gameState.players.length === 0) {
+    wheelPlayerList.innerHTML = '<p>No players available</p>';
+    return;
+  }
+  
+  console.log("Generating checkboxes for players:", gameState.players.length);
+  
+  // Create a checkbox for each player
+  gameState.players.forEach(player => {
+    const playerItem = document.createElement('div');
+    playerItem.className = 'wheel-player-item selected'; // Start with selected class
+    
+    // Create checkbox - checked by default
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `wheel-player-${player.id}`;
+    checkbox.setAttribute('data-player-id', player.id);
+    checkbox.checked = true; // All players are included by default
+    
+    // Create label
+    const label = document.createElement('label');
+    label.htmlFor = `wheel-player-${player.id}`;
+    label.textContent = player.name;
+    
+    // Add change event to update the wheel when selection changes
+    checkbox.addEventListener('change', function() {
+      // Toggle the selected class based on checkbox state
+      if (this.checked) {
+        playerItem.classList.add('selected');
+      } else {
+        playerItem.classList.remove('selected');
+      }
+      
+      console.log(`Player ${player.name} checkbox changed: ${this.checked}`);
+      
+      // Ensure there's at least one player checked
+      const anyChecked = document.querySelectorAll('.wheel-player-item input[type="checkbox"]:checked').length > 0;
+      if (!anyChecked) {
+        this.checked = true;
+        playerItem.classList.add('selected');
+        alert("At least one player must be selected for the wheel");
+      }
+      
+      // Reinitialize the wheel with selected players - add a small delay
+      setTimeout(initWheel, 50);
+    });
+    
+    // Also make the entire item clickable
+    playerItem.addEventListener('click', function(e) {
+      // Don't trigger if clicking directly on the checkbox (would be handled by checkbox's own event)
+      if (e.target !== checkbox) {
+        checkbox.checked = !checkbox.checked;
+        
+        // Manually trigger the change event
+        const changeEvent = new Event('change');
+        checkbox.dispatchEvent(changeEvent);
+      }
+    });
+    
+    // Add elements to the container
+    playerItem.appendChild(checkbox);
+    playerItem.appendChild(label);
+    wheelPlayerList.appendChild(playerItem);
+  });
+  
+  console.log("Wheel player checkboxes generated:", gameState.players.length);
+  
+  // Initialize the wheel with all selected players - increased timeout for reliability
+  setTimeout(initWheel, 300);
+}
+
+// Add this to setupPlayers to generate checkboxes and initialize the wheel
+const originalSetupPlayers = setupPlayers;
+// Modify setupPlayers to include wheel functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Store original function reference if it exists
+  if (typeof setupPlayers === 'function') {
+    const originalSetupPlayers = setupPlayers;
+    
+    // Override the function
+    setupPlayers = function() {
+      // Call the original function
+      originalSetupPlayers();
+      
+      // Generate player checkboxes for the wheel - increased timeout for reliability
+      setTimeout(() => {
+        generateWheelPlayerCheckboxes();
+        
+        // Force a redraw of the wheel after setup
+        setTimeout(() => {
+          if (wheel) {
+            wheel.update();
+            console.log("Forced wheel update after player setup");
+          }
+        }, 600);
+      }, 500);
+    };
+  }
+});
+function debugWheel() {
+  if (!wheel) {
+    console.error("Wheel not initialized");
+    return;
+  }
+  
+  console.log("Current wheel config:", wheel.config);
+  console.log("Data labels:", wheel.data.labels);
+  console.log("Datasets:", wheel.data.datasets);
+  
+  // Count checked player checkboxes
+  const checkedPlayers = document.querySelectorAll('.wheel-player-item input[type="checkbox"]:checked');
+  console.log("Checked player checkboxes:", checkedPlayers.length);
+  
+  // List the selected players
+  const selectedPlayers = getSelectedWheelPlayers();
+  console.log("Selected players:", selectedPlayers.map(p => p.name));
+  
+  // Reinitialize wheel to fix any issues
+  initWheel();
+}
+
+// Add this to the DOMContentLoaded listener
+document.addEventListener('DOMContentLoaded', function() {
+  // ...existing code...
+  
+  // Add wheel debugging on game start
+  const startGameBtn = document.getElementById('start-game-btn');
+  if (startGameBtn) {
+    startGameBtn.addEventListener('click', function() {
+      setTimeout(() => {
+        debugWheel();
+      }, 2000);
+    });
+  }
 });

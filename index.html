@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Couples Clash Cards</title>
     <link rel="stylesheet" href="styles.css" />
+    <!-- Add Chart.js libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.1.0/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body>
     <!-- Intro Screen -->
@@ -213,14 +216,29 @@
                 </div>
             </div>
             
-            <!-- Spinner Container - New container -->
+            <!-- Spinner Container with player selection -->
             <div class="spinner-container">
                 <h2>Spin the Wheel/Pick a Partner:</h2>
-                <div class="spinner-wrapper">
-                    <img src="assets/spinner.png" alt="Spinner" id="spinner-img" class="spinner-img">
+                
+                <!-- New Spin Wheel Container -->
+                <div class="wheel-wrapper">
+                    <div class="wheel-container">
+                        <canvas id="wheel"></canvas>
+                        <button id="spin-btn">Spin</button>
+                        <img src="assets/spinner-arrow.png" alt="spinner arrow" class="spinner-arrow">
+                    </div>
+                    <div id="final-value">
+                        <p>Click On The Spin Button To Start</p>
+                    </div>
+                    
+                    <!-- Add player selection checkboxes -->
+                    <div class="wheel-player-selection">
+                        <h3>Players on Wheel:</h3>
+                        <div id="wheel-player-list" class="wheel-player-list">
+                            <!-- Player checkboxes will be added here dynamically -->
+                        </div>
+                    </div>
                 </div>
-                <button id="spinner-btn" class="btn">Spin the Wheel</button>
-                <p id="spinner-result"></p>
             </div>
 
             <!-- Game Elements - Hidden elements used by JS -->
