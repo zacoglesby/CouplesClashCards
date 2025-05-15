@@ -5,7 +5,8 @@
     "text": "What is your partner's favorite dessert?",
     "points": 1,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Answer/Ask questions about your romantic partner!"
   },
   {
     "id": "card_002",
@@ -13,7 +14,8 @@
     "text": "Name one ambition that your partner deeply cares about.",
     "points": 1,
     "requiresSpinner": false,
-    "timeLimit": 30
+    "timeLimit": 30,
+    "categoryDescription": "Spin the wheel, pick a partner, the winning team gets points!"
   },
   {
     "id": "card_003",
@@ -21,7 +23,8 @@
     "text": "Share a memory that touched you deeply.",
     "points": 1,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Answer/Ask questions about selected player (Spin the wheel)"
   },
   {
     "id": "card_004",
@@ -29,15 +32,17 @@
     "text": "What trait do you secretly wish you had more of?",
     "points": 2,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Answer questions about yourself"
   },
   {
     "id": "card_005",
     "type": "ActOut",
-    "text": "Mime your partner’s typical morning routine!",
+    "text": "Mime your partner's typical morning routine!",
     "points": 2,
     "requiresSpinner": true,
-    "timeLimit": 45
+    "timeLimit": 45,
+    "categoryDescription": "Act out scenario/memory/prompt with selected player (Spin the wheel)"
   },
   {
     "id": "card_006",
@@ -45,7 +50,8 @@
     "text": "Lose a turn for revealing a secret too soon.",
     "points": -1,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Uh oh! Sucks for you!"
   },
   {
     "id": "card_007",
@@ -53,7 +59,8 @@
     "text": "You may ask your partner any question you like. No time limit!",
     "points": 3,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Wildcard! You don't know what to expect!"
   },
   {
     "id": "card_008",
@@ -61,7 +68,8 @@
     "text": "What's your partner's dream vacation destination?",
     "points": 1,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Answer/Ask questions about your romantic partner!"
   },
   {
     "id": "card_009",
@@ -69,7 +77,8 @@
     "text": "What's your partner's biggest fear?",
     "points": 2,
     "requiresSpinner": false,
-    "timeLimit": 30
+    "timeLimit": 30,
+    "categoryDescription": "Spin the wheel, pick a partner, the winning team gets points!"
   },
   {
     "id": "card_010",
@@ -77,6 +86,7 @@
     "text": "Share a moment when your partner made you proud.",
     "points": 2,
     "requiresSpinner": false,
-    "timeLimit": 0
+    "timeLimit": 0,
+    "categoryDescription": "Answer/Ask questions about selected player (Spin the wheel)"
   }
 ]

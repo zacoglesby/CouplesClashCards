@@ -23,47 +23,96 @@
         </header>
         
         <div id="player-form">
-            <h2>Game Configuration</h2>
-            <div class="setup-controls">
-                <div class="form-group">
-                    <label for="player-count">Number of Players:</label>
-                    <select id="player-count">
-                        <option value="2">2</option>
-                        <option value="4">4</option>
-                        <option value="6">6</option>
-                        <option value="8">8</option>
-                    </select>
+            <div class="setup-left-column">
+                <h2>Game Configuration:</h2>
+                <div class="setup-controls">
+                    <div class="form-group">
+                        <label for="player-count">Number of Players:</label>
+                        <select id="player-count">
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="6">6</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="couple-count">Number of Couples:</label>
+                        <select id="couple-count">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="couple-count">Number of Couples:</label>
-                    <select id="couple-count">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                    </select>
+
+                <h2>Enter Players:</h2>
+                <div id="player-inputs"></div>
+            </div>
+
+            <div class="setup-right-column">
+                <h2>Select Couples:</h2>
+                <div id="couple-pairings"></div>
+
+                <h2>Game Settings:</h2>
+                <div class="game-settings">
+                    <div class="points-section">
+                        <label for="point-threshold">Points to Win:</label>
+                        <select id="point-threshold">
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Move deck selection out of the columns to span full width -->
+            <div class="deck-selection-full-width">
+                <h3>Deck/Card Selection:</h3>
+                <div class="card-types-horizontal">
+                    <div class="card-type-option">
+                        <input type="checkbox" id="heart-cards" name="card-types" value="Heart" checked>
+                        <label for="heart-cards">Heart</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="mind-cards" name="card-types" value="Mind" checked>
+                        <label for="mind-cards">Mind</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="soul-cards" name="card-types" value="Soul" checked>
+                        <label for="soul-cards">Soul</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="ego-cards" name="card-types" value="Ego" checked>
+                        <label for="ego-cards">Ego</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="actout-cards" name="card-types" value="ActOut" checked>
+                        <label for="actout-cards">ActOut</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="penalty-cards" name="card-types" value="Penalty" checked>
+                        <label for="penalty-cards">Penalty</label>
+                    </div>
+                    <div class="card-type-option">
+                        <input type="checkbox" id="wildcard-cards" name="card-types" value="Wildcard" checked>
+                        <label for="wildcard-cards">Wildcard</label>
+                    </div>
                 </div>
             </div>
 
-            <h2>Enter Players</h2>
-            <div id="player-inputs"></div>
-            
-            <h2>Select Couples</h2>
-            <div id="couple-pairings"></div>
-
-            <h2>Game Settings</h2>
-            <label for="point-threshold">Points to Win:</label>
-            <select id="point-threshold">
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-            </select>
-
-            <button id="start-game-btn" class="img-button">
-                <img src="assets/StartGame.png" alt="Start Game">
-            </button>
+            <!-- Add a container for buttons -->
+            <div class="setup-buttons">
+                <button id="setup-main-page-btn" class="img-button">
+                    <img src="assets/MainPage.png" alt="Main Page">
+                </button>
+                <button id="start-game-btn" class="img-button">
+                    <img src="assets/StartGame.png" alt="Start Game">
+                </button>
+            </div>
         </div>
     </section>
 
@@ -74,6 +123,18 @@
         </header>
 
         <div class="game-container">
+            <!-- Scoreboard - Updated container -->
+            <div id="scoreboard" class="scoreboard-container">
+                <h2>Scoreboard</h2>
+                <div class="score-wrapper">
+                    <ul id="score-list" class="score-list"></ul>
+                </div>
+                <div class="score-summary">
+                    <p>Points to Win: <span id="points-to-win"></span></p>
+                    <p id="leader-status"></p>
+                </div>
+            </div>
+            
             <!-- Player Turn Indicator -->
             <div id="player-turn" class="player-turn">
                 <h2>Player Turn:</h2>
@@ -82,10 +143,63 @@
 
             <!-- Card Area -->
             <div id="card-area">
-                <button id="draw-card-btn" class="img-button">
-                    <img src="assets/DrawCard.png" alt="Draw Card">
-                </button>
-                <div id="card-display"></div>
+                <!-- Modified card display area with deck and drawn card sections -->
+                <div class="card-play-area">
+                    <div id="drawn-card-area">
+                        <!-- This is where the drawn card will appear -->
+                        <div class="flip-container drawn-card-container">
+                            <div class="card drawn-card">
+                                <div class="card-front"></div>
+                                <div class="card-back">
+                                    <div class="card-content">
+                                        <h3 class="card-type"></h3>
+                                        <p class="card-description"></p>
+                                        <p class="card-text"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="deck-area">
+                        <!-- Card stack with flipping effect -->
+                        <div class="deck-flip">
+                            <!-- Stacked cards behind -->
+                            <div class="stack-card-back" style="transform:rotateZ(-2deg);top:1px"></div>
+                            <div class="stack-card-back" style="transform:rotateZ(6deg);top:7px"></div>
+                            
+                            <!-- The main flip card container -->
+                            <div id="flipcard" class="flip-stack-container">
+                                <!-- The hidden card -->
+                                <div class="stack-card-g hidden-card"></div>
+                                
+                                <!-- The flipper wrapper -->
+                                <div class="flipper">
+                                    <div class="front">
+                                        <div class="stack-card-back"></div>
+                                    </div>
+                                    <div class="back">
+                                        <div class="stack-card-king">
+                                            <div class="stack-card-content">
+                                                <h3 class="stack-card-type"></h3>
+                                                <p class="stack-card-description"></p>
+                                                <p class="stack-card-text"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="draw-card-btn" class="img-button">
+                            <img src="assets/DrawCard.png" alt="Draw Card">
+                        </button>
+                        
+                        <!-- Debug status indicator (hidden by default) -->
+                        <div id="debug-status" style="display: none; margin-top: 10px; color: #666; font-size: 0.8rem;"></div>
+                    </div>
+                </div>
+
                 <div class="action-buttons" style="display: none;">
                     <button id="complete-btn" class="img-button">
                         <img src="assets/Complete.png" alt="Complete" class="action-button-img">
@@ -98,22 +212,21 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Scoreboard -->
-            <div id="scoreboard" class="scoreboard-container">
-                <h2>Scoreboard</h2>
-                <div class="score-wrapper">
-                    <ul id="score-list" class="score-list"></ul>
+            
+            <!-- Spinner Container - New container -->
+            <div class="spinner-container">
+                <h2>Spin the Wheel/Pick a Partner:</h2>
+                <div class="spinner-wrapper">
+                    <img src="assets/spinner.png" alt="Spinner" id="spinner-img" class="spinner-img">
                 </div>
-                <div class="score-summary">
-                    <p>Points to Win: <span id="points-to-win"></span></p>
-                </div>
+                <button id="spinner-btn" class="btn">Spin the Wheel</button>
+                <p id="spinner-result"></p>
             </div>
 
-            <!-- Game Elements -->
+            <!-- Game Elements - Hidden elements used by JS -->
             <div id="spinner-modal" style="display: none;">
-                <img src="assets/spinner.png" alt="Spinner" id="spinner-img" />
-                <p id="spinner-result"></p>
+                <img src="assets/spinner.png" alt="Spinner" id="spinner-modal-img" />
+                <p id="spinner-modal-result"></p>
             </div>
 
             <div id="timer-display" style="display: none;">

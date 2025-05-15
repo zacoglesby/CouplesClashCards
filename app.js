@@ -6,7 +6,8 @@ const gameState = {
   discardPile: [],
   currentPlayerIndex: 0,
   pointThreshold: 10,  // Default, can be 10, 15, 20, 30
-  currentCard: null
+  currentCard: null,
+  selectedCardTypes: ['Heart', 'Mind', 'Soul', 'Ego', 'ActOut', 'Penalty', 'Wildcard'] // Add this line
 };
 
 let timerInterval;
@@ -63,6 +64,8 @@ function shuffleDeck(deck) {
 window.onload = async function() {
   await loadDeck();
   setupEventListeners();
+  // Make sure setupCardTypeSelections is called after DOM is fully loaded
+  setTimeout(setupCardTypeSelections, 100);
 };
 
 function setupEventListeners() {
@@ -75,6 +78,7 @@ function setupEventListeners() {
   const completeBtn = document.getElementById('complete-btn');
   const incompleteBtn = document.getElementById('incomplete-btn');
   const mainPageBtn = document.getElementById('main-page-btn');
+  const setupMainPageBtn = document.getElementById('setup-main-page-btn');
 
   if (startBtn) {
     startBtn.addEventListener('click', () => {
@@ -101,7 +105,11 @@ function setupEventListeners() {
   }
 
   if (drawCardBtn) {
-    drawCardBtn.addEventListener('click', drawCard);
+    // Replace the event listener to ensure it's properly attached
+    drawCardBtn.addEventListener('click', function() {
+      console.log("Draw card button clicked");
+      drawCard();
+    });
   }
 
   if (restartBtn) {
@@ -124,6 +132,13 @@ function setupEventListeners() {
   }
   if (mainPageBtn) {
     mainPageBtn.addEventListener('click', confirmMainPageReturn);
+  }
+  
+  if (setupMainPageBtn) {
+    setupMainPageBtn.addEventListener('click', () => {
+      document.getElementById('setup-page').style.display = 'none';
+      document.getElementById('intro-screen').style.display = 'block';
+    });
   }
 }
 
@@ -234,8 +249,9 @@ function setupPlayers() {
   const players = [];
   
   playerInputs.forEach((input, index) => {
+    // Use the same id as the input field (e.g., player1, player2, ...)
     players.push({
-      id: `player_${index + 1}`,
+      id: input.id.replace('-name', ''),
       name: input.value || `Player ${index + 1}`,
       partnerId: '',
       score: 0
@@ -267,6 +283,7 @@ function setupPlayers() {
 
   renderScoreboard(); // Initialize scoreboard after player setup
   updateCurrentPlayerDisplay(); // Add this line
+  highlightCurrentPlayer(); // Highlight the initial current player
 }
 
 function nextPlayer() {
@@ -283,14 +300,35 @@ function updateCurrentPlayerDisplay() {
     playerNameElement.textContent = currentPlayer.name;
   }
 }
-
 function renderScoreboard() {
   const scoreList = document.getElementById('score-list');
   scoreList.innerHTML = ''; // Clear existing items
 
+  // Find the player with the highest score
+  const leadingPlayer = findLeadingPlayer();
+
   gameState.players.forEach(player => {
     const li = document.createElement('li');
-    li.textContent = `${player.name}: ${player.score} pts`;
+    
+    // Create name span
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = player.name;
+    
+    // Create score span
+    const scoreSpan = document.createElement('span');
+    scoreSpan.textContent = `${player.score} pts`;
+    
+    // Add elements to list item
+    li.appendChild(nameSpan);
+    li.appendChild(scoreSpan);
+    
+    li.id = player.id; // Set id for highlightScore to work
+    
+    // Highlight the leading player
+    if (leadingPlayer && player.id === leadingPlayer.id) {
+      li.classList.add('leader');
+    }
+    
     scoreList.appendChild(li);
   });
 
@@ -299,8 +337,67 @@ function renderScoreboard() {
   if (pointsToWin) {
     pointsToWin.textContent = gameState.pointThreshold;
   }
+  
+  // Update leader status
+  updateLeaderStatus();
 }
 
+// Find the player with the highest score
+function findLeadingPlayer() {
+  if (gameState.players.length === 0) return null;
+  
+  return gameState.players.reduce((leader, player) => {
+    return (player.score > leader.score) ? player : leader;
+  }, gameState.players[0]);
+}
+
+// Update the leader status text
+function updateLeaderStatus() {
+  const leaderStatus = document.getElementById('leader-status');
+  if (!leaderStatus) return;
+  
+  const leadingPlayer = findLeadingPlayer();
+  
+  if (leadingPlayer && leadingPlayer.score > 0) {
+    leaderStatus.innerHTML = `<span class="leader-highlight">${leadingPlayer.name}</span> is in the lead!`;
+  } else if (gameState.players.length > 0) {
+    leaderStatus.textContent = "Game just started!";
+  } else {
+    leaderStatus.textContent = "";
+  }
+}
+
+// Enhance the existing spinner functionality
+function showSpinner(excludeId) {
+  // Update the visible spinner instead of modal
+  const spinnerImg = document.getElementById('spinner-img');
+  const spinnerResult = document.getElementById('spinner-result');
+  
+  if (spinnerResult) {
+    spinnerResult.textContent = 'Spinning...';
+  }
+  
+  // Add spinning animation
+  if (spinnerImg) {
+    spinnerImg.style.transform = `rotate(${Math.floor(Math.random() * 1080) + 360}deg)`;
+  }
+
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const chosen = spinForParticipant(excludeId);
+      
+      if (spinnerResult) {
+        spinnerResult.textContent = `Chosen: ${chosen.name}`;
+      }
+      
+      setTimeout(() => {
+        resolve(chosen);
+      }, 1000);
+    }, 2000);
+  });
+}
+
+// Make sure to update score and check for winner
 function updateScore(playerId, points) {
   const player = gameState.players.find(p => p.id === playerId);
   if (player) {
@@ -430,43 +527,114 @@ function highlightCurrentPlayer() {
 }
 
 function drawCard() {
-  // Check if deck needs to be reshuffled
-  if (gameState.deck.length === 0) {
-    if (gameState.discardPile.length === 0) {
-      alert("No more cards in the deck!");
-      return;
+    console.log("Draw card function called");
+    
+    if (gameState.deck.length === 0) {
+        if (gameState.discardPile.length === 0) {
+            alert("No more cards in the deck!");
+            return;
+        }
+        // When reshuffling, only include cards of selected types
+        gameState.deck = gameState.discardPile.filter(card => 
+            gameState.selectedCardTypes.includes(card.type)
+        );
+        gameState.discardPile = [];
+        shuffleDeck(gameState.deck);
     }
-    // Reshuffle discard pile back into deck
-    gameState.deck = [...gameState.discardPile];
-    gameState.discardPile = [];
-    shuffleDeck(gameState.deck);
-    console.log("Reshuffled discard pile into deck:", gameState.deck.length, "cards");
-  }
 
-  const card = gameState.deck.pop();
-  gameState.currentCard = card;
-  gameState.discardPile.push(card);
-  displayCard(card);
-  document.querySelector('.action-buttons').style.display = 'flex';
-  console.log("Cards remaining:", gameState.deck.length);
+    // Draw cards only of selected types
+    let card;
+    do {
+        if (gameState.deck.length === 0) {
+            alert("No valid cards remaining!");
+            return;
+        }
+        card = gameState.deck.pop();
+    } while (!gameState.selectedCardTypes.includes(card.type));
+
+    gameState.currentCard = card;
+    gameState.discardPile.push(card);
+    
+    console.log("Card drawn:", card);
+    
+    // Display the card using the new stack flip animation
+    displayCardWithStackFlip(card);
+    
+    // Disable the draw button temporarily during animation
+    const drawCardBtn = document.getElementById('draw-card-btn');
+    if (drawCardBtn) {
+        drawCardBtn.disabled = true;
+    }
+    
+    // Show action buttons after card flip animation
+    setTimeout(() => {
+        const actionButtons = document.querySelector('.action-buttons');
+        if (actionButtons) {
+            actionButtons.style.display = 'flex';
+        }
+        
+        if (drawCardBtn) {
+            drawCardBtn.disabled = false;
+        }
+    }, 900);
 }
 
-// Update displayCard to not automatically resolve the card
-function displayCard(card) {
-  const cardDisplay = document.getElementById('card-display');
-  cardDisplay.innerHTML = `
-    <div class="card">
-      <h3>${card.type} Card</h3>
-      <p>${card.text}</p>
-    </div>
-  `;
-  
-  const cardElement = cardDisplay.querySelector('.card');
-  cardElement.classList.add('flip');
+function displayCardWithStackFlip(card) {
+    console.log("Displaying card with stack flip:", card);
+    
+    // Update the content in the stack-card-king (back of the flip)
+    const stackCardType = document.querySelector('.stack-card-type');
+    const stackCardText = document.querySelector('.stack-card-text');
+    const stackCardDesc = document.querySelector('.stack-card-description');
+    
+    if (stackCardType) {
+        stackCardType.textContent = `${card.type} Card`;
+    } else {
+        console.error("Card type element not found");
+    }
+    
+    if (stackCardDesc) {
+        stackCardDesc.textContent = card.categoryDescription || "";
+    } else {
+        console.error("Card description element not found");
+    }
+    
+    if (stackCardText) {
+        stackCardText.textContent = card.text;
+    } else {
+        console.error("Card text element not found");
+    }
+    
+    // Trigger the card flip animation
+    toggleStackFlip();
 }
 
-function flipCard(cardElement) {
-  cardElement.classList.toggle('flip');
+function toggleStackFlip() {
+    console.log("Toggling stack flip");
+    
+    const flipcard = document.getElementById('flipcard');
+    const hiddenCard = document.querySelector('.stack-card-g.hidden-card');
+    
+    if (!flipcard) {
+        console.error("Flipcard element not found!");
+        return;
+    }
+    
+    if (flipcard.classList.contains('flip')) {
+        // Reset the flip (hiding the card)
+        flipcard.classList.remove('flip');
+        flipcard.classList.add('hide');
+        
+        setTimeout(() => {
+            flipcard.classList.remove('hide');
+            if (hiddenCard) hiddenCard.style.display = 'block';
+        }, 900);
+    } else {
+        // Perform the flip (showing the card)
+        if (hiddenCard) hiddenCard.style.display = 'block';
+        flipcard.classList.add('flip');
+        playSound('assets/score-up.mp3'); // Optional: play a sound when flipping
+    }
 }
 
 function highlightScore(playerId) {
@@ -490,3 +658,172 @@ function endGame(winner) {
   document.getElementById('end-game').style.display = 'block';
   document.getElementById('winner-name').textContent = winner.name;
 }
+function setupCardTypeSelections() {
+    const cardTypeCheckboxes = document.querySelectorAll('.card-type-option input[type="checkbox"]');
+    
+    if (cardTypeCheckboxes.length > 0) {
+        // Initialize gameState.selectedCardTypes with checked values
+        const checkedTypes = Array.from(cardTypeCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        // Only update if checkboxes exist and are selected, otherwise keep default
+        if (checkedTypes.length > 0) {
+            gameState.selectedCardTypes = checkedTypes;
+        }
+        
+        // Ensure at least one card type is selected initially
+        if (gameState.selectedCardTypes.length === 0) {
+            const firstCheckbox = cardTypeCheckboxes[0];
+            if (firstCheckbox) {
+                firstCheckbox.checked = true;
+                gameState.selectedCardTypes = [firstCheckbox.value];
+            }
+        }
+    }
+
+    cardTypeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Update selectedCardTypes based on current checkbox states
+            gameState.selectedCardTypes = Array.from(cardTypeCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            
+            // Ensure at least one type is selected
+            if (gameState.selectedCardTypes.length === 0) {
+                alert("Please select at least one card type!");
+                checkbox.checked = true;
+                gameState.selectedCardTypes = [checkbox.value];
+            }
+            
+            console.log('Selected card types:', gameState.selectedCardTypes);
+            
+            // Filter current deck to only include selected card types
+            gameState.deck = gameState.deck.filter(card => 
+                gameState.selectedCardTypes.includes(card.type)
+            );
+        });
+    });
+}
+
+// Enhance button animations
+function setupButtonAnimations() {
+    const buttons = document.querySelectorAll('button, .img-button');
+    
+    buttons.forEach(button => {
+        // Add ripple effect at click position
+        button.addEventListener('mousedown', function(e) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple-effect';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.borderRadius = '50%';
+            ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+            ripple.style.position = 'absolute';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            
+            // Calculate click position relative to button
+            const rect = button.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            button.appendChild(ripple);
+            
+            // Remove ripple element after animation completes
+            setTimeout(() => {
+                button.removeChild(ripple);
+            }, 600);
+        });
+    });
+}
+
+// Add ripple animation keyframes to the document
+function addRippleAnimation() {
+    if (!document.getElementById('ripple-animation')) {
+        const style = document.createElement('style');
+        style.id = 'ripple-animation';
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Add this to your existing event listeners setup
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing DOMContentLoaded code...
+    
+    // Setup button animations
+    addRippleAnimation();
+    setupButtonAnimations();
+});
+
+// Also set up animations whenever the page changes
+function setupNewElements() {
+    // This can be called after dynamic elements are added
+    setupButtonAnimations();
+}
+
+// Modify your existing setupEventListeners function to include animation setup
+const originalSetupEventListeners = setupEventListeners;
+setupEventListeners = function() {
+    originalSetupEventListeners();
+    setTimeout(setupButtonAnimations, 100); // Short delay to ensure all elements are ready
+};
+
+// Add this debugging function at the end of the file
+function debug(message) {
+    console.log(message);
+    const debugStatus = document.getElementById('debug-status');
+    if (debugStatus) {
+        debugStatus.style.display = 'block';
+        debugStatus.textContent = message;
+        
+        // Clear message after 5 seconds
+        setTimeout(() => {
+            debugStatus.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Add this code to test the button functionality when the game page is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const drawCardBtn = document.getElementById('draw-card-btn');
+    
+    if (drawCardBtn) {
+        // Add another event listener to test if the button is clickable
+        drawCardBtn.addEventListener('click', function() {
+            debug('Draw card button clicked!');
+        });
+        
+        // Log that the button was found
+        console.log('Draw card button found and event listener attached');
+    } else {
+        console.error('Draw card button not found on page load');
+    }
+    
+    // Test if the button is accessible when the gameplay page is shown
+    const startGameBtn = document.getElementById('start-game-btn');
+    if (startGameBtn) {
+        startGameBtn.addEventListener('click', function() {
+            setTimeout(() => {
+                const drawCardBtnAfterGameStart = document.getElementById('draw-card-btn');
+                if (drawCardBtnAfterGameStart) {
+                    console.log('Draw card button found after game start');
+                    debug('Game started - Draw card button is ready');
+                } else {
+                    console.error('Draw card button not found after game start');
+                }
+            }, 500);
+        });
+    }
+});
